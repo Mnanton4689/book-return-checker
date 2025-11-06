@@ -33,6 +33,14 @@
       }
     }
 
+    function formatDate(yyyymmdd) {
+      if (!yyyymmdd || yyyymmdd.length !== 8) return 'Invalid Date' ;
+      const year = yyymmdd.substring(0, 4);
+      const month = yyyymmdd.substring(4, 6);
+      const day = yyyymmdd.substring(6, 8);
+      return '${month]/${day}/${year}';
+    }
+
     function checkBarcode(barcode) {
       for (let row of sheetData) {
         if (row[0] === barcode) {
@@ -41,7 +49,7 @@
             author: row[3],
             global_item: row[1],
             vendor: row[6],
-            last_received: row[10]
+            last_received: formadDate(row[10])
           };
         }
       }
@@ -63,7 +71,7 @@
             <div class="found">✅ Book Found!</div>
             <strong>Title:</strong> ${book.title}<br>
             <strong>Author:</strong> ${book.author}<br>
-            <strong>Global Item:</strong> ${book.global_item}<br>
+            <strong>Article:</strong> ${book.global_item}<br>
             <strong>Vendor:</strong> ${book.vendor}<br>
             <strong>Last Received:</strong> ${book.last_received}
           `;
@@ -80,3 +88,4 @@
   </script>
 </body>
 </html>
+

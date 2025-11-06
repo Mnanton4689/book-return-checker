@@ -15,17 +15,24 @@
   <p>Scan or enter a barcode:</p>
   <input type="text" id="barcodeInput" placeholder="Scan barcode..." autofocus />
   <div class="result" id="result"></div>
+
   <script>
     const SHEET_ID = '1jLDj1w1nvptP2s0QRGCbidWLEChqSWLkDkBe2hNUpsE';
     const API_KEY = 'AIzaSyApxtdRkPOKleiqSQb50pWyU_Co47ckvS8';
     const RANGE = 'Sheet1!A1:O1651';
     let sheetData = [];
+
     async function loadSheetData() {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      sheetData = data.values || [];
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        sheetData = data.values || [];
+      } catch (error) {
+        console.error("Failed to fetch sheet data:", error);
+      }
     }
+
     function checkBarcode(barcode) {
       for (let row of sheetData) {
         if (row[0] === barcode) {
@@ -40,37 +47,36 @@
       }
       return null;
     }
+
     document.getElementById('barcodeInput').addEventListener('keypress', async function(e) {
       if (e.key === 'Enter') {
         const barcode = e.target.value.trim();
         const resultDiv = document.getElementById('result');
+
         if (!sheetData.length) {
           await loadSheetData();
         }
+
         const book = checkBarcode(barcode);
         if (book) {
           resultDiv.innerHTML = `
             <div class="found">✅ Book Found!</div>
             <strong>Title:</strong> ${book.title}<br>
             <strong>Author:</strong> ${book.author}<br>
-            <strong>Gobal Item:</stong> ${book.global_item}<br>
+            <strong>Global Item:</strong> ${book.global_item}<br>
             <strong>Vendor:</strong> ${book.vendor}<br>
-            <strong>Last received:</strong> ${book.last_received}
-            ';
+            <strong>Last Received:</strong> ${book.last_received}
+          `;
         } else {
           resultDiv.innerHTML = `<div class="not-found">❌ Book not on return list.</div>`;
         }
+
         e.target.value = ''; // Clear input
       }
     });
+
     // Preload sheet data on page load
     loadSheetData();
   </script>
 </body>
 </html>
-
- 
-
-
-
-

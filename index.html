@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>📚 Book Return Checker</title>
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  https://unpkg.com/html5-qrcode</script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -14,10 +13,8 @@
       background-color: #f9f9f9;
       color: #333;
     }
-    h1 {
+    h1, h2 {
       text-align: center;
-      font-size: 1.8em;
-      margin-bottom: 10px;
     }
     .container {
       max-width: 500px;
@@ -48,11 +45,6 @@
       background-color: #f0f0f0;
       display: none;
     }
-    .result {
-      font-size: 1.1em;
-      line-height: 1.6;
-      margin-top: 20px;
-    }
     .found {
       color: green;
       font-weight: bold;
@@ -67,21 +59,49 @@
       display: inline-block;
       width: 130px;
     }
+    button {
+      padding: 10px 20px;
+      margin: 10px 5px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #eee;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+
+  <!-- Main Screen -->
+  <div id="mainScreen" class="container">
     <h1>📚 Book Return Checker</h1>
     <input type="text" id="barcodeInput" placeholder="Scan or enter barcode..." autofocus />
     <div id="scanner">📷 Tap to scan barcode</div>
-    <div class="result" id="result"></div>
+  </div>
+
+  <!-- Book Found Screen -->
+  <div id="bookFoundScreen" class="container" style="display:none;">
+    <h2>✅ Book Found</h2>
+    <div id="bookDetails"></div>
+    <button onclick="goBack()">🔙 Back</button>
+    <button onclick="submitBook()">📤 Submit</button>
+  </div>
+
+  <!-- Not Found Screen -->
+  <div id="notFoundScreen" class="container" style="display:none;">
+    <h2 class="not-found">❌ Book not on return list.</h2>
   </div>
 
   <script>
     const SHEET_ID = '1jLDj1w1nvptP2s0QRGCbidWLEChqSWLkDkBe2hNUpsE';
     const API_KEY = 'AIzaSyApxtdRkPOKleiqSQb50pWyU_Co47ckvS8';
     const RANGE = 'Sheet1!A1:O1651';
+    const SUBMIT_URL = 'https://script.google.com/macros/s/AKfycbz_wmpaqeeMw_flgg9lb2EnBfQgxk5fN4ERwU_-mjmVJXFbEIV7NXzLibHpgTASvyUeRw/exec';
+
     let sheetData = [];
+    let currentBook = null;
 
     async function loadSheetData() {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
@@ -117,29 +137,59 @@
       return null;
     }
 
+    function showScreen(screenId) {
+      document.getElementById('mainScreen').style.display = 'none';
+      document.getElementById('bookFoundScreen').style.display = 'none';
+      document.getElementById('notFoundScreen').style.display = 'none';
+      document.getElementById(screenId).style.display = 'block';
+    }
+
+    function goBack() {
+      showScreen('mainScreen');
+    }
+
+    function submitBook() {
+      if (!currentBook) return;
+
+      fetch(SUBMIT_URL, {
+        method: 'POST',
+        body: JSON.stringify(currentBook),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => {
+        alert('✅ Submitted successfully!');
+        goBack();
+      })
+      .catch(error => {
+        alert('❌ Submission failed: ' + error.message);
+      });
+    }
+
+    function handleBarcode(barcode) {
+      const book = checkBarcode(barcode);
+      if (book) {
+        currentBook = book;
+        document.getElementById('bookDetails').innerHTML = `
+          <strong>Title:</strong> ${book.title}<br>
+          <strong>Author:</strong> ${book.author}<br>
+          <strong>Global Item:</strong> ${book.global_item}<br>
+          <strong>Vendor:</strong> ${book.vendor}<br>
+          <strong>Last Received:</strong> ${book.last_received}
+        `;
+        showScreen('bookFoundScreen');
+      } else {
+        showScreen('notFoundScreen');
+        setTimeout(() => showScreen('mainScreen'), 1000);
+      }
+    }
+
     document.getElementById('barcodeInput').addEventListener('keypress', async function(e) {
       if (e.key === 'Enter') {
         const barcode = e.target.value.trim();
-        const resultDiv = document.getElementById('result');
-
-        if (!sheetData.length) {
-          await loadSheetData();
-        }
-
-        const book = checkBarcode(barcode);
-        if (book) {
-          resultDiv.innerHTML = `
-            <div class="found">✅ Book Found!</div>
-            <strong>Title:</strong> ${book.title}<br>
-            <strong>Author:</strong> ${book.author}<br>
-            <strong>Global Item:</strong> ${book.global_item}<br>
-            <strong>Vendor:</strong> ${book.vendor}<br>
-            <strong>Last Received:</strong> ${book.last_received}
-          `;
-        } else {
-          resultDiv.innerHTML = `<div class="not-found">❌ Book not on return list.</div>`;
-        }
-
+        if (!sheetData.length) await loadSheetData();
+        handleBarcode(barcode);
         e.target.value = '';
       }
     });
@@ -148,39 +198,18 @@
       return /Mobi|Android/i.test(navigator.userAgent);
     }
 
-    function startCameraScanner() {
+    async function startCameraScanner() {
       const html5QrCode = new Html5Qrcode("scanner");
       html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
         async (decodedText) => {
           html5QrCode.stop();
-          const resultDiv = document.getElementById("result");
-
-          if (!sheetData.length) {
-            await loadSheetData();
-          }
-
-          const book = checkBarcode(decodedText);
-          if (book) {
-            resultDiv.innerHTML = `
-              <div class="found">✅ Book Found!</div>
-              <strong>Title:</strong> ${book.title}<br>
-              <strong>Author:</strong> ${book.author}<br>
-              <strong>Global Item:</strong> ${book.global_item}<br>
-              <strong>Vendor:</strong> ${book.vendor}<br>
-              <strong>Last Received:</strong> ${book.last_received}
-            `;
-          } else {
-            resultDiv.innerHTML = `<div class="not-found">❌ Book not on return list.</div>`;
-          }
+          if (!sheetData.length) await loadSheetData();
+          handleBarcode(decodedText);
         },
-        (errorMessage) => {
-          // Ignore scan errors
-        }
-      ).catch(err => {
-        console.error("Camera start failed:", err);
-      });
+        (errorMessage) => {}
+      ).catch(err => console.error("Camera start failed:", err));
     }
 
     if (isMobileDevice()) {
@@ -192,5 +221,4 @@
   </script>
 </body>
 </html>
-
 

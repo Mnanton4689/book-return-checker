@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -152,10 +153,27 @@
       html5QrCode.start(
         { facingMode: "environment" },
         { fps: 10, qrbox: 250 },
-        (decodedText) => {
+        async (decodedText) => {
           html5QrCode.stop();
-          document.getElementById("barcodeInput").value = decodedText;
-          document.getElementById("barcodeInput").dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
+          const resultDiv = document.getElementById("result");
+
+          if (!sheetData.length) {
+            await loadSheetData();
+          }
+
+          const book = checkBarcode(decodedText);
+          if (book) {
+            resultDiv.innerHTML = `
+              <div class="found">✅ Book Found!</div>
+              <strong>Title:</strong> ${book.title}<br>
+              <strong>Author:</strong> ${book.author}<br>
+              <strong>Global Item:</strong> ${book.global_item}<br>
+              <strong>Vendor:</strong> ${book.vendor}<br>
+              <strong>Last Received:</strong> ${book.last_received}
+            `;
+          } else {
+            resultDiv.innerHTML = `<div class="not-found">❌ Book not on return list.</div>`;
+          }
         },
         (errorMessage) => {
           // Ignore scan errors
@@ -174,3 +192,5 @@
   </script>
 </body>
 </html>
+
+

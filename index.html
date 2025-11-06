@@ -30,11 +30,11 @@
       for (let row of sheetData) {
         if (row[0] === barcode) {
           return {
-            title: row[1],
-            author: row[2],
-            global_item: row[3],
-            vendor: row[4],
-            deadline: row[5]
+            title: row[2],
+            author: row[3],
+            global_item: row[1],
+            vendor: row[7],
+            last_received: row[11]
           };
         }
       }
@@ -52,8 +52,10 @@
           resultDiv.innerHTML = `
             <div class="found">✅ Book Found!</div>
             <strong>Title:</strong> ${book.title}<br>
+            <strong>Author:</strong> ${book.author}<br>
+            <strong>Gobal_Item:</stong> ${book.global_item}<br>
             <strong>Vendor:</strong> ${book.vendor}<br>
-            <strong>Return Deadline:</strong> ${book.deadline}
+            <strong>last_received:</strong> ${book.last_received}
           `;
         } else {
           resultDiv.innerHTML = `<div class="not-found">❌ Book not on return list.</div>`;
@@ -68,4 +70,5 @@
 </html>
 
  
+
 

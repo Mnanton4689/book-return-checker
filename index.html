@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Book Return Checker</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input { font-size: 1.2em; padding: 10px; width: 300px; }
+    .result { margin-top: 20px; font-size: 1.1em; }
+    .found { color: green; }
+    .not-found { color: red; }
+  </style>
+</head>
+<body>
+  <h1>📚 Book Return Checker</h1>
+  <p>Scan or enter a barcode:</p>
+  <input type="text" id="barcodeInput" placeholder="Scan barcode..." autofocus />
+  <div class="result" id="result"></div>
+  <script>
+    const SHEET_ID = '1jLDj1w1nvptP2s0QRGCbidWLEChqSWLkDkBe2hNUpsE/edit?gid=0#gid=0';
+    const API_KEY = 'AIzaSyApxtdRkPOKleiqSQb50pWyU_Co47ckvS8';
+    const RANGE = 'ReturnTable';
+    let sheetData = [];
+    async function loadSheetData() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+      const response = await fetch(url);
+      const data = await response.json();
+      sheetData = data.values || [];
+    }
+    function checkBarcode(barcode) {
+      for (let row of sheetData) {
+        if (row[0] === barcode) {
+          return {
+            title: row[1],
+            author: row[2],
+            global_item: row[3],
+            vendor: row[4],
+            deadline: row[5]
+          };
+        }
+      }
+      return null;
+    }
+    document.getElementById('barcodeInput').addEventListener('keypress', async function(e) {
+      if (e.key === 'Enter') {
+        const barcode = e.target.value.trim();
+        const resultDiv = document.getElementById('result');
+        if (!sheetData.length) {
+          await loadSheetData();
+        }
+        const book = checkBarcode(barcode);
+        if (book) {
+          resultDiv.innerHTML = `
+            <div class="found">✅ Book Found!</div>
+            <strong>Title:</strong> ${book.title}<br>
+            <strong>Vendor:</strong> ${book.vendor}<br>
+            <strong>Return Deadline:</strong> ${book.deadline}
+          `;
+        } else {
+          resultDiv.innerHTML = `<div class="not-found">❌ Book not on return list.</div>`;
+        }
+        e.target.value = ''; // Clear input
+      }
+    });
+    // Preload sheet data on page load
+    loadSheetData();
+  </script>
+</body>
+</html>
+ 

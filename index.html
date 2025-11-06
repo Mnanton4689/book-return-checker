@@ -33,8 +33,8 @@
             title: row[2],
             author: row[3],
             global_item: row[1],
-            vendor: row[7],
-            last_received: row[11]
+            vendor: row[6],
+            last_received: row[10]
           };
         }
       }
@@ -53,10 +53,10 @@
             <div class="found">✅ Book Found!</div>
             <strong>Title:</strong> ${book.title}<br>
             <strong>Author:</strong> ${book.author}<br>
-            <strong>Gobal_Item:</stong> ${book.global_item}<br>
+            <strong>Gobal Item:</stong> ${book.global_item}<br>
             <strong>Vendor:</strong> ${book.vendor}<br>
-            <strong>last_received:</strong> ${book.last_received}
-          `;
+            <strong>Last received:</strong> ${book.last_received}
+            ';
         } else {
           resultDiv.innerHTML = `<div class="not-found">❌ Book not on return list.</div>`;
         }
@@ -70,5 +70,6 @@
 </html>
 
  
+
 
 

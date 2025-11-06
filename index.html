@@ -18,7 +18,7 @@
   <script>
     const SHEET_ID = '1jLDj1w1nvptP2s0QRGCbidWLEChqSWLkDkBe2hNUpsE/edit?gid=0#gid=0';
     const API_KEY = 'AIzaSyApxtdRkPOKleiqSQb50pWyU_Co47ckvS8';
-    const RANGE = 'ReturnTable';
+    const RANGE = 'Sheet1! A1:O1651';
     let sheetData = [];
     async function loadSheetData() {
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
@@ -66,4 +66,5 @@
   </script>
 </body>
 </html>
+
  

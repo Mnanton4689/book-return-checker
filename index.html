@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>📚 Book Return Checker</title>
-  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -38,13 +38,15 @@
       width: 100%;
       max-width: 400px;
       margin: auto;
-      cursor: pointer;
       border: 2px dashed #ccc;
       border-radius: 8px;
       padding: 10px;
       text-align: center;
       background-color: #f0f0f0;
       display: none;
+    }
+    #scanner video {
+      width: 100%;
     }
     .found {
       color: green;
@@ -77,7 +79,7 @@
   <div id="mainScreen" class="container">
     <h1>📚 Book Return Checker</h1>
     <input type="text" id="barcodeInput" placeholder="Scan or enter barcode..." autofocus />
-    <div id="scanner">📷 Tap to scan barcode</div>
+    <div id="scanner">📷 Scanning...</div>
   </div>
 
   <div id="bookFoundScreen" class="container" style="display:none;">
@@ -179,6 +181,7 @@
     }
 
     function handleBarcode(barcode) {
+      if (barcode.length !== 13) return;
       const book = checkBarcode(barcode);
       if (book) {
         currentBook = book;
@@ -205,33 +208,47 @@
       }
     });
 
-    function isMobileDevice() {
-      return /Mobi|Android/i.test(navigator.userAgent);
-    }
-
-    async function startCameraScanner() {
-      const html5QrCode = new Html5Qrcode("scanner");
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        async (decodedText) => {
-          html5QrCode.stop();
-          if (!sheetData.length) await loadSheetData();
-          handleBarcode(decodedText);
+    function startQuagga() {
+      Quagga.init({
+        inputStream: {
+          name: "Live",
+          type: "LiveStream",
+          target: document.querySelector('#scanner'),
+          constraints: {
+            facingMode: "environment"
+          }
         },
-        (errorMessage) => {}
-      ).catch(err => console.error("Camera start failed:", err));
+        decoder: {
+          readers: ["ean_reader"]
+        }
+      }, function(err) {
+        if (err) {
+          console.error(err);
+          return;
+        }
+        Quagga.start();
+      });
+
+      Quagga.onDetected(async function(result) {
+        const code = result.codeResult.code;
+        if (code.length === 13) {
+          Quagga.stop();
+          if (!sheetData.length) await loadSheetData();
+          handleBarcode(code);
+        }
+      });
     }
 
-    if (isMobileDevice()) {
+    if (/Mobi|Android/i.test(navigator.userAgent)) {
       document.getElementById("scanner").style.display = "block";
-      document.getElementById("scanner").addEventListener("click", startCameraScanner);
+      startQuagga();
     }
 
     loadSheetData();
   </script>
 </body>
 </html>
+
 
 
 
